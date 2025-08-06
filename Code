@@ -1,0 +1,80 @@
+#Level 1 : Basic
+print("LEVEL 1: BASIC")
+#TASK 1: Data Preprocessing for Machine Learning
+print("TASK 1: Data Preprocessing for Machine Learning")
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
+# 1. Load dataset
+# We'll load our dataset in df.
+try:
+    df = pd.read_csv('/content/1) iris.csv')
+except FileNotFoundError:
+    print("File not found. Creating a sample DataFrame for demonstration.")
+    data = {'Age': [25, 30, np.nan, 50, 40],
+            'Salary': [50000, 60000, 75000, np.nan, 80000],
+            'City': ['New York', 'London', 'Paris', 'New York', 'London'],
+            'Gender': ['Male', 'Female', 'Male', 'Female', 'Male'],
+            'Target': [1, 0, 1, 0, 1]}
+    df = pd.DataFrame(data)
+
+# Print initial info
+print("Initial DataFrame:")
+print(df.head())
+print("\n" + "="*50 + "\n")
+
+# 2. Define features (X) and target (y)
+# Replace 'Target' with the name of your target variable column
+# Corrected target column name to 'species' for the Iris dataset
+target_column = 'species'
+X = df.drop(target_column, axis=1)
+y = df[target_column]
+
+# 3. Identify categorical and numerical columns
+numerical_features = X.select_dtypes(include=['int64', 'float64']).columns
+categorical_features = X.select_dtypes(include=['object']).columns
+
+# 4. Create preprocessing pipelines
+# Pipeline for numerical features:
+# - Impute missing values with the mean
+# - Standardize the data (mean=0, std=1)
+numerical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler())
+])
+
+# Pipeline for categorical features:
+# - Impute missing values with the most frequent value
+# - One-hot encode the categories
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+])
+
+# 5. Combine pipelines using ColumnTransformer
+# This allows different transformations to be applied to different columns
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numerical_transformer, numerical_features),
+        ('cat', categorical_transformer, categorical_features)
+    ])
+
+# 6. Split the data into training and testing sets
+# We split the raw data first to prevent data leakage from the test set
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 7. Apply the preprocessing
+# Fit the preprocessor on the training data ONLY, and transform both train and test sets
+X_train_preprocessed = preprocessor.fit_transform(X_train)
+X_test_preprocessed = preprocessor.transform(X_test)
+
+# Print the shapes of the final datasets
+print("Shape of preprocessed training data:")
+print(f"X_train: {X_train_preprocessed.shape}, y_train: {y_train.shape}")
+print("\nShape of preprocessed testing data:")
+print(f"X_test: {X_test_preprocessed.shape}, y_test: {y_test.shape}")
